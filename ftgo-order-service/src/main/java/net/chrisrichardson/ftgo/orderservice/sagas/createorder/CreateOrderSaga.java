@@ -28,8 +28,6 @@ public class CreateOrderSaga implements SimpleSaga<CreateOrderSagaState> {
             .step()
                 .invokeParticipant(accountingService.authorize, CreateOrderSagaState::makeAuthorizeCommand)
             .step()
-              .invokeParticipant(kitchenService.confirmCreate, CreateOrderSagaState::makeConfirmCreateTicketCommand)
-            .step()
               .invokeParticipant(orderService.approve, CreateOrderSagaState::makeApproveOrderCommand)
             .build();
 
