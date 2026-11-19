@@ -28,7 +28,7 @@ jobs:
       - name: Load the pinned gov/cicd release
         shell: bash
         env:
-          CICD_RELEASE_SHA256: "d662535e955027c267fb672a94bca2259edcf1d1ff217abdceb475a73a8417a3"
+          CICD_RELEASE_SHA256: "e0cc5f2520075430e340f98629535ea0b3b67c4ae4b9d1e9941f51553ccf04e1"
         run: |
           set -euo pipefail
           archive="/opt/holonic-cicd/releases/${CICD_RELEASE_SHA256}/github-shared-v2-action.tar"
