@@ -123,7 +123,8 @@ jobs:
           [[ "$current" == "$(printf 'open\t%s\t%s' "$HEAD_SHA" "$BASE_SHA")" ]] || exit 0
           test -n "$COMMENT_SUMMARY"
           summary=$(printf '%s' "$COMMENT_SUMMARY" | base64 --decode)
-          body=$(printf '<!-- holonic-pr-analysis %s.%s -->\n%s' "$GITHUB_RUN_NUMBER" "$GITHUB_RUN_ATTEMPT" "$summary")
+          body=$(printf '<!-- holonic-pr-analysis %s.%s -->\n%s\n\n[Open full PR analysis](%s%s)' \
+            "$GITHUB_RUN_NUMBER" "$GITHUB_RUN_ATTEMPT" "$summary" "$PLATFORM_URL" "$LATEST_PATH")
           if [ -n "$comment_id" ]; then
             gh api --method PATCH "repos/$REPOSITORY/issues/comments/$comment_id" -f body="$body" --silent
           else
