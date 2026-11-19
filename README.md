@@ -1,40 +1,82 @@
-# Try Holonic on an FTGO pull request
+# Testing guide: governed-behavior review
 
-Open a draft pull request against `holonic-cicd-demo` to see how a code change can affect another service. The example below changes the Order service’s cancellation saga and lets you inspect the possible effect on a Kitchen ticket. You can do the whole exercise in GitHub with write access to this demo repository. The analysis pages are public and require no Holonic or AWS login.
+Open FTGO pull requests against `main`. The Holonic check posts a summary and a
+link to the full analysis in the pull request conversation. The approved
+[FTGO specifications](https://49s1mkl7jg.execute-api.us-east-1.amazonaws.com/reports/ftgo/specifications)
+are available in the Holonic Web Portal.
 
-[Browse the approved FTGO workflow specifications](https://49s1mkl7jg.execute-api.us-east-1.amazonaws.com/reports/ftgo/specifications).
+This guide helps you, or an automated tester working for you, try the review on your own changes and judge how well it
+supports a reviewer's decision.
 
-## 1. Make a change on a new branch
+## What the review does
 
-Open [CancelOrderSaga.java on the demo branch](https://github.com/scottswindell-hub/governance-cicd-test/blob/holonic-cicd-demo/ftgo-order-service/src/main/java/net/chrisrichardson/ftgo/orderservice/sagas/cancelorder/CancelOrderSaga.java) and click the pencil to edit it. In `initializeSagaDefinition()`, find these two lines:
+The review learns the business workflows in your services from the code itself, and records the rules your team has
+accepted for each one. When a pull request arrives, it compares the behavior of every changed method against that
+baseline and shows the reviewer the few differences that matter. Each difference is tied to the workflow step it
+reaches and the accepted rule it puts at risk, and its intent is judged against the PR description.
 
-```java
-.invokeParticipant(this::beginCancelTicket)
-.withCompensation(this::undoBeginCancelTicket)
-```
+## Why it works
 
-Keep the first line and delete the second. This leaves the forward cancellation step in place and removes its rollback action. Click **Commit changes**, choose **Create a new branch**, and give it a name such as `demo/alex-cancel-rollback`. Use your own name so testers can work independently.
+- **Refactors stay quiet.** Methods are compared by what they do on every path: the writes they make, the messages
+  they send, the errors they raise and the order of their calls. Renames, extracted helpers, reordered branches and
+  loops rewritten as streams all clear.
+- **Real changes surface at any size.** A three-line behavior change inside a thousand-line refactor still shows up,
+  as one specific item.
+- **Every finding is specific.** Each item names the method that changed, what it did before and after, the workflow
+  step it reaches and the accepted rule at risk.
+- **Your PR description counts.** A change the description explains reads as intended. A change it doesn't mention
+  is surfaced for a closer look.
+- **Consistent answers.** The same change gets the same result every time it runs.
+- **Advisory.** The review informs the reviewer and never blocks a merge.
 
-## 2. Open a draft PR against the demo branch
+## Reading a review
 
-On the **Open a pull request** screen, set **base** to `holonic-cicd-demo` and **compare** to your new branch. Check that **Files changed** shows your intended edit. Give the PR a title such as **Test cancellation without kitchen rollback**. The description is optional. Use the dropdown beside **Create pull request** and select **Create draft pull request**.
+Each review page has:
 
-The base branch matters: the demo workflow runs on PRs targeting `holonic-cicd-demo`. [Compare branches in GitHub](https://github.com/scottswindell-hub/governance-cicd-test/compare/holonic-cicd-demo...holonic-cicd-demo)
+1. **The verdict** for the pull request as a whole.
+2. **One item per changed behavior**, each with:
+   - the accepted rule at risk, in plain words
+   - before and after: what the code did, and what it does now
+   - a label:
+     - **intended**: the PR description explains this change
+     - **unexpected**: the change works against the description or the accepted rule
+     - **uncertain**: the description doesn't say, so a person should decide
+3. **The workflow map**, which shows where in your workflows the change lands.
+4. **What this run covered**: the revisions compared, the files and methods analyzed, and anything set aside for
+   manual review.
 
-## 3. Find the analysis on your PR
+For each item, the reviewer marks **Expected** or **Investigate**.
 
-Open the PR’s **Checks** tab and look for **Holonic shared governance check**. If it says **Queued**, the shared runner is processing another PR. Once the run finishes, return to **Conversation** and find the **Holonic PR analysis** comment from `github-actions[bot]`.
+## Designing test changes
 
-| Comment row | What to do |
-| --- | --- |
-| ❌ Finding | Click the finding title. Each finding opens its own public page. |
-| ✅ Completed | Read the row for the result. **No changes in scope** means there was nothing applicable to evaluate for that assessment. |
-| ⚪ Inconclusive, partial coverage, or unavailable | Read the label for that assessment. A gray row leaves an open question about coverage. |
+The most useful test set mixes the change types below. Pairing a behavior change with a refactor of the same code is
+the clearest way to see the review at work.
 
-For the cancellation example, look under **Workflow specifications**. On the finding page, read **Behavior change** for the before, after, and potential downstream effect. Follow the affected specification into the expandable tree, then open **Impact graph** and **Service ecosystem** to explore the relationship between Order and Kitchen. A red workflow check is an expected outcome when the change violates an approved requirement. [See the bot comment on example PR #4](https://github.com/scottswindell-hub/governance-cicd-test/pull/4#issuecomment-6994758050)
+| Change you make | What a good run shows |
+|---|---|
+| A refactor: rename, extract a method, reorder independent branches, turn a loop into a stream | Cleared, with nothing to review |
+| A behavior change explained in the PR description | One item, labelled intended, naming the rule |
+| The same behavior change with a vague or empty description | One item, labelled uncertain |
+| A behavior change described as "no behavior change" | One item, labelled unexpected |
+| A change in one service that affects a rule carried out by unchanged code elsewhere | An item on that rule, even though its code didn't change |
+| A changed configuration value used by several workflows | One item listing every affected workflow |
+| A very large pull request | Routed to manual review, with a note saying why |
 
-To read the PR-wide analysis, including when there are no finding links, open `https://49s1mkl7jg.execute-api.us-east-1.amazonaws.com/reports/ftgo/pr/NUMBER` and replace `NUMBER` with your PR number.
+Good behavior changes to try in a workflow application:
 
-## 4. Try a revision and compare
+- pass a different identifier to a command or event
+- send a message in a different order, or drop one
+- raise a different error, or handle one differently
+- change which state a record moves to
+- skip or add a compensation step
 
-Push another commit to the same branch to trigger a fresh analysis. To try a behavior-preserving control, restore the compensation line and leave a whitespace-only edit so the PR still has a diff. The bot updates its existing comment after the run. Compare your result with [the preserving example on PR #5](https://github.com/scottswindell-hub/governance-cicd-test/pull/5#issuecomment-6994731479). Close your draft PR when you finish testing.
+## Writing PR descriptions
+
+Write descriptions the way you would for a colleague: say what behavior changes and why. The review reads them the
+same way. To see the labels at work, run one change several times with different descriptions: accurate, vague, empty
+and misleading.
+
+## Scope
+
+Designed for Java services built on Spring, including message-driven workflows and sagas. The review governs the
+workflows and rules accepted in the current baseline; workflows added later are covered once the baseline is updated.

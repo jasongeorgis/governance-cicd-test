@@ -1,9 +1,9 @@
 name: Holonic shared governance check
 
-# Install from a reviewed base branch and pin the action to a reviewed commit.
+# Generated from the gov/cicd FTGO pilot template. The runner package is pinned by SHA-256.
 on:
   pull_request_target:
-    branches: ["holonic-cicd-demo"]
+    branches: ["main", "holonic-cicd-demo"]
     types: [opened, synchronize, reopened, edited]
 
 permissions:
@@ -25,8 +25,22 @@ jobs:
       - id: attempt
         shell: bash
         run: printf 'number=%s\n' "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+      - name: Load the pinned gov/cicd release
+        shell: bash
+        env:
+          CICD_RELEASE_SHA256: "b99b9996c7553bb5ba12584c77a15a178bc2acd54ec7a3e653f063f601857806"
+        run: |
+          set -euo pipefail
+          archive="/opt/holonic-cicd/releases/${CICD_RELEASE_SHA256}/github-shared-v2-action.tar"
+          printf '%s  %s\n' "$CICD_RELEASE_SHA256" "$archive" | sha256sum --check --status
+          stage=$(mktemp -d "$GITHUB_WORKSPACE/.holonic-cicd.XXXXXXXX")
+          trap 'rm -rf -- "$stage"' EXIT
+          tar -xf "$archive" -C "$stage"
+          test -f "$stage/action.yml"
+          rm -rf -- "$GITHUB_WORKSPACE/.holonic-cicd"
+          mv -- "$stage" "$GITHUB_WORKSPACE/.holonic-cicd"
       - id: review
-        uses: scottswindell-hub/governance-cicd-test@5b75454759fbde60dc96e352d716959d7fa830df
+        uses: ./.holonic-cicd
         with:
           defer-verdict: 'true'
           browser-report: 'true'
