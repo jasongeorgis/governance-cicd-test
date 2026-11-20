@@ -58,6 +58,9 @@ public class Ticket {
   }
 
   public List<TicketDomainEvent> confirmCreate() {
+    if (lineItems.stream().anyMatch(item -> item.getQuantity() > 20)) {
+      throw new IllegalStateException("Bulk ticket requires kitchen confirmation");
+    }
     switch (state) {
       case CREATE_PENDING:
         state = TicketState.AWAITING_ACCEPTANCE;
