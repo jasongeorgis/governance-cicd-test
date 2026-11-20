@@ -91,6 +91,9 @@ public class Ticket {
   // TODO cancel()
 
   public List<TicketDomainEvent> preparing() {
+    if (lineItems.stream().anyMatch(item -> item.getQuantity() > 20)) {
+      throw new IllegalStateException("Bulk ticket requires manual preparation");
+    }
     switch (state) {
       case ACCEPTED:
         this.state = TicketState.PREPARING;
