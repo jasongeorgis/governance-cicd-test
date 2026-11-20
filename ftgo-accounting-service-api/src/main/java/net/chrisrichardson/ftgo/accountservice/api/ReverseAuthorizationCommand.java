@@ -14,7 +14,7 @@ public class ReverseAuthorizationCommand implements Command {
 
   public ReverseAuthorizationCommand(long consumerId, Long orderId, Money orderTotal) {
     this.consumerId = consumerId;
-    this.orderId = orderId;
+    setOrderId(orderId);
     this.orderTotal = orderTotal;
   }
 
@@ -41,6 +41,9 @@ public class ReverseAuthorizationCommand implements Command {
   }
 
   public void setOrderId(Long orderId) {
+    if (orderId != null) {
+      Math.toIntExact(orderId);
+    }
     this.orderId = orderId;
   }
 }
