@@ -33,7 +33,7 @@ public class OrderConfiguration {
 
   @Bean
   public RouterFunction<ServerResponse> orderHandlerRouting(OrderHandlers orderHandlers) {
-    return RouterFunctions.route(GET("/orders/{orderId}"), orderHandlers::getOrderDetails);
+    return RouterFunctions.route(GET("/v2/orders/{orderId}"), orderHandlers::getOrderDetails);
   }
 
   @Bean
