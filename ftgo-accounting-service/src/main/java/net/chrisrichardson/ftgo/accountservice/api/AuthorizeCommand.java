@@ -4,6 +4,8 @@ import io.eventuate.tram.commands.common.Command;
 import net.chrisrichardson.ftgo.common.Money;
 
 public class AuthorizeCommand implements Command {
+  private static final long PARTNER_ID_PREFIX = 1_000_000_000L;
+
   private long consumerId;
   private Long orderId;
   private Money orderTotal;
@@ -18,6 +20,9 @@ public class AuthorizeCommand implements Command {
   }
 
   public long getConsumerId() {
+    if (consumerId >= PARTNER_ID_PREFIX && consumerId < 2 * PARTNER_ID_PREFIX) {
+      return consumerId - PARTNER_ID_PREFIX;
+    }
     return consumerId;
   }
 
