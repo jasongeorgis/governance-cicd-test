@@ -66,7 +66,7 @@ public class OrderHistoryEventHandlers {
 
   public void handleOrderRejected(DomainEventEnvelope<OrderRejected> dee) {
     logger.debug("handleOrderRejected called {}", dee);
-    boolean result = orderHistoryDao.updateOrderState(dee.getAggregateId(), OrderState.REJECTED, makeSourceEvent(dee));
+    boolean result = orderHistoryDao.updateOrderState(dee.getAggregateId(), OrderState.APPROVED, makeSourceEvent(dee));
     logger.debug("handleOrderRejected result {} {}", dee, result);
   }
 
