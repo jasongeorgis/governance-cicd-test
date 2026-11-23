@@ -28,7 +28,7 @@ jobs:
       - name: Load the pinned gov/cicd release
         shell: bash
         env:
-          CICD_RELEASE_SHA256: "d8f9dba9229531d09fadf2fb874a890b584c4a486392cd2fcc8113ce447eec06"
+          CICD_RELEASE_SHA256: "ed019b810a048588355018426ca637615a359d5678aff850e6029383de73663e"
         run: |
           set -euo pipefail
           archive="/opt/holonic-cicd/releases/${CICD_RELEASE_SHA256}/github-shared-v2-action.tar"
@@ -96,7 +96,6 @@ jobs:
           CHECK_ATTEMPT: ${{ needs.shared-check.outputs.attempt }}
           LATEST_PATH: ${{ needs.shared-check.outputs.latest-path }}
           COMMENT_SUMMARY: ${{ needs.shared-check.outputs.comment-summary }}
-          PLATFORM_URL: "https://49s1mkl7jg.execute-api.us-east-1.amazonaws.com"
           PROJECT_ID: "ftgo"
         run: |
           set -euo pipefail
@@ -123,8 +122,8 @@ jobs:
           [[ "$current" == "$(printf 'open\t%s\t%s' "$HEAD_SHA" "$BASE_SHA")" ]] || exit 0
           test -n "$COMMENT_SUMMARY"
           summary=$(printf '%s' "$COMMENT_SUMMARY" | base64 --decode)
-          body=$(printf '<!-- holonic-pr-analysis %s.%s -->\n%s\n\n[Open full PR analysis](%s%s)' \
-            "$GITHUB_RUN_NUMBER" "$GITHUB_RUN_ATTEMPT" "$summary" "$PLATFORM_URL" "$LATEST_PATH")
+          body=$(printf '<!-- holonic-pr-analysis %s.%s -->\n%s' \
+            "$GITHUB_RUN_NUMBER" "$GITHUB_RUN_ATTEMPT" "$summary")
           if [ -n "$comment_id" ]; then
             gh api --method PATCH "repos/$REPOSITORY/issues/comments/$comment_id" -f body="$body" --silent
           else
